@@ -231,7 +231,7 @@ type yundata struct {
 	Uinfo   uinfo
 }
 type uinfo struct {
-	Uname          string
+	Uname          interface{}
 	Avatar_url     string
 	Pubshare_count int
 }
