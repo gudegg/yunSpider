@@ -250,7 +250,7 @@ func IndexResource(uk int64) {
 		if yundata == nil {
 			temp := nullstart
 			nullstart = time.Now().Unix()
-			if nullstart - temp < 1500 {
+			if nullstart - temp < 3 {
 				time.Sleep(50 * time.Second)
 			}
 		} else {
@@ -290,8 +290,8 @@ func IndexResource(uk int64) {
 					i--
 					temp := nullstart
 					nullstart = time.Now().Unix()
-					//2次异常小于1.5s 被百度限制了 休眠50s
-					if nullstart - temp < 1500 {
+					//2次异常小于3s 被百度限制了 休眠50s
+					if nullstart - temp < 3 {
 						time.Sleep(50 * time.Second)
 					}
 				}
