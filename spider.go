@@ -48,9 +48,9 @@ func main() {
 	var id int64
 	var flag int
 	var uk int64
-	//GetFollow(2673449054, 0)
+	//GetFollow(2736848922, 0)
 	//fmt.Println(DoRedis())
-	//可以先存几个热门的用户到数据库表avaiuk中 也可以直接GetFollow(2673449054, 0)爬取
+	//可以先存几个热门的用户到数据库表avaiuk中 也可以直接GetFollow(2736848922, 0)爬取
 	for {
 		rows, _ := db.Query("select id,flag,uk from avaiuk where flag=0  limit 1")
 		for rows.Next() {
@@ -60,7 +60,7 @@ func main() {
 		stmt.Exec(id)
 		log.Warn("Select new uk:", uk)
 		stmt.Close()
-		GetFollow(uk, 0)
+		GetFollow(uk, 0,true)
 	}
 
 }
@@ -127,13 +127,14 @@ func KeyExists(key interface{}) bool {
 
 
 //获取订阅用户
-func GetFollow(uk int64, start int) {
+func GetFollow(uk int64, start int,index bool) {
 	log.Info("Into uk:",uk,",start:",start)
 	flag := KeyExists(uk)
 	if (!flag) {
 		SetKV(uk, "")
-		IndexResource(uk)
-
+		if(index){
+			IndexResource(uk)
+		}
 		recFollow(uk, start,true)
 	} else {
 		if start > 0 {
@@ -156,14 +157,20 @@ func recFollow(uk int64, start int,goPage bool) {
 			if f.Errno == 0 {
 				for _, v := range f.Follow_list {
 					followcount := v.Follow_count
+					shareCount:=v.Pubshare_count
 					if followcount > 0 {
-						GetFollow(v.Follow_uk, 0)
+						if(shareCount>0){
+							GetFollow(v.Follow_uk, 0,true)
+						}else {
+							GetFollow(v.Follow_uk, 0,false)
+						}
+
 					}
 				}
 				if(goPage){
 					page := (f.Total_count - 1) / 24 + 1
 					for i := 1; i < page; i++ {
-						GetFollow(uk, 24 * i)
+						GetFollow(uk, 24 * i,false)
 					}
 				}
 
@@ -182,6 +189,7 @@ type follow struct {
 	Errno       int
 }
 type follow_list struct {
+	Pubshare_count int
 	Follow_count int
 	Follow_uk    int64
 }
@@ -250,7 +258,7 @@ func IndexResource(uk int64) {
 		if yundata == nil {
 			temp := nullstart
 			nullstart = time.Now().Unix()
-			if nullstart - temp < 3 {
+			if nullstart - temp < 2 {
 				time.Sleep(50 * time.Second)
 			}
 		} else {
@@ -290,8 +298,8 @@ func IndexResource(uk int64) {
 					i--
 					temp := nullstart
 					nullstart = time.Now().Unix()
-					//2次异常小于3s 被百度限制了 休眠50s
-					if nullstart - temp < 3 {
+					//2次异常小于2s 被百度限制了 休眠50s
+					if nullstart - temp < 2 {
 						time.Sleep(50 * time.Second)
 					}
 				}
