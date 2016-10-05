@@ -236,7 +236,7 @@ type records struct {
 	Title   string
 }
 
-var nullstart = time.Now().UnixNano()
+var nullstart = time.Now().Unix()
 var uinfoId int64 = 0
 
 func IndexResource(uk int64) {
@@ -249,7 +249,7 @@ func IndexResource(uk int64) {
 		yundata := GetData(result)
 		if yundata == nil {
 			temp := nullstart
-			nullstart = time.Now().UnixNano()
+			nullstart = time.Now().Unix()
 			if nullstart - temp < 1500 {
 				time.Sleep(50 * time.Second)
 			}
@@ -289,7 +289,7 @@ func IndexResource(uk int64) {
 				} else {
 					i--
 					temp := nullstart
-					nullstart = time.Now().UnixNano()
+					nullstart = time.Now().Unix()
 					//2次异常小于1.5s 被百度限制了 休眠50s
 					if nullstart - temp < 1500 {
 						time.Sleep(50 * time.Second)
