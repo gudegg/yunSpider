@@ -1,6 +1,6 @@
 百度云爬虫
 -----
-> 网站:[https://www.zgdgude.cn/](https://www.zgdgude.cn/)
+> 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
 
 > 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
 
