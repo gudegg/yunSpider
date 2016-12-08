@@ -5,6 +5,7 @@
 > 安装使用
 
 1. 安装依赖
+
 - go get github.com/go-sql-driver/mysql
 - go get github.com/siddontang/go/log
 - go get github.com/garyburd/redigo/redis
