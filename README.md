@@ -9,7 +9,7 @@
   * go get github.com/siddontang/go/log
   * go get github.com/garyburd/redigo/redis
   * go get github.com/Unknwon/goconfig
-2. 设置MySQL和Redis配置
+2. 修改config.ini配置文件中你自己的MySQL和Redis配置
 3. 创建database名为baidu,然后执行baidu.sql
 4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下,然后运行)
 
