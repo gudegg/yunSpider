@@ -2,10 +2,9 @@
 -----
 > 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
 
-> 安装使用
+####安装使用
 
 1. 安装依赖
-
 - go get github.com/go-sql-driver/mysql
 - go get github.com/siddontang/go/log
 - go get github.com/garyburd/redigo/redis
