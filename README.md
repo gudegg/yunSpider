@@ -2,6 +2,16 @@
 -----
 > 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
 
+> 安装使用
+1. 安装依赖
+- go get github.com/go-sql-driver/mysql
+- go get github.com/siddontang/go/log
+- go get github.com/garyburd/redigo/redis
+- go get github.com/Unknwon/goconfig
+2. 设置MySQL和Redis配置
+3. 创建database名为baidu,然后执行baidu.sql
+4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下 然后运行)
+
 > 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
 
 - 获取用户订阅:

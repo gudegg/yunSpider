@@ -11,31 +11,88 @@ import (
 	"time"
 	"database/sql"
 	"github.com/garyburd/redigo/redis"
+	"github.com/Unknwon/goconfig"
+	"strconv"
+	"bytes"
 )
 
 var db *sql.DB
 var err error
-//Mysql初始化
+var username,password,url,address,redis_Pwd,mode string
+var ConfError error
+var cfg *goconfig.ConfigFile
+//Mysql Redis初始化
 func init() {
-	db, err = sql.Open("mysql", "root:123456@(127.0.0.1:3306)/baidu")
+	cfg, ConfError = goconfig.LoadConfigFile("config.ini")
+	if ConfError!=nil{
+		log.Error("配置文件不存在")
+		return
+	}
+	username, ConfError =cfg.GetValue("MySQL","username")
+	if ConfError !=nil{
+		log.Error("读取数据库username错误")
+		return
+	}
+	password, ConfError =cfg.GetValue("MySQL","password")
+	if ConfError !=nil{
+		log.Error("读取数据库password错误")
+		return
+	}
+	url, ConfError =cfg.GetValue("MySQL","url")
+	if ConfError !=nil{
+		log.Error("读取数据库url错误")
+		return
+	}
+	address, ConfError =cfg.GetValue("Redis","address")
+	if ConfError !=nil{
+		log.Error("读取数据库address错误")
+		return
+	}
+	redis_Pwd, ConfError =cfg.GetValue("Redis","password")
+	if ConfError !=nil{
+		log.Error("读取Redis password错误")
+		return
+	}
+	var dataSourceName bytes.Buffer
+	dataSourceName.WriteString(username)
+	dataSourceName.WriteString(":")
+	dataSourceName.WriteString(password)
+	dataSourceName.WriteString("@")
+	dataSourceName.WriteString(url)
+	db, err = sql.Open("mysql", dataSourceName.String())
 	if err!=nil{
 		log.Error("数据库连接出错")
 	}
 	db.SetMaxOpenConns(50)
+	initRedisPool()
 }
 //Redis
-func GetRedisPool() *redis.Pool {
-	rdspool := &redis.Pool{
+var redisPool *redis.Pool
+func initRedisPool()  {
+	redisPool = &redis.Pool{
 		MaxIdle:100,
 		IdleTimeout: time.Second * 300,
 		Dial: func() (redis.Conn, error) {
-			conn, cErr := redis.Dial("tcp", "127.0.0.1:6379", redis.DialPassword("123456"))
-			if cErr != nil {
-				return nil, cErr
+			var conn redis.Conn
+			var cErr error
+			if len(redis_Pwd)==0{
+				conn, cErr = redis.Dial("tcp", address)
+				if cErr != nil {
+					log.Errorf("Redis初始化失败，请检查配置是否填写正确")
+					return nil, cErr
+				}
+			}else {
+				conn, cErr = redis.Dial("tcp", address, redis.DialPassword(redis_Pwd))
+				if cErr != nil {
+					log.Errorf("Redis初始化失败，请检查配置是否填写正确")
+					return nil, cErr
+				}
 			}
+
 			return conn, nil
-		}, }
-	return rdspool
+		},
+	}
+	DoRedis()
 }
 type sharedata struct {
 	Id      int64
@@ -44,24 +101,46 @@ type sharedata struct {
 	Shareid string
 }
 
+
 func main() {
 	var id int64
 	var flag int
 	var uk int64
 	//GetFollow(2736848922, 0)
-	//fmt.Println(DoRedis())
 	//可以先存几个热门的用户到数据库表avaiuk中 也可以直接GetFollow(2736848922, 0)爬取
-	for {
-		rows, _ := db.Query("select id,flag,uk from avaiuk where flag=0  limit 1")
-		for rows.Next() {
-			rows.Scan(&id, &flag, &uk)
+	mode,ConfError=cfg.GetValue("Mode","mode")
+	if ConfError!=nil{
+		log.Error("读取mode错误")
+		return
+	}else {
+		if m,_:=strconv.Atoi(mode);m==1{
+			start_uk,err:=cfg.GetValue("Mode","uk")
+			if err!=nil{
+				log.Error("读取开锁爬取uk错误")
+				return
+			}else{
+				log.Info("从单个uk开始爬取")
+				s_uk,_:=strconv.ParseInt(start_uk,10,64)
+				GetFollow(s_uk, 0,true)
+
+			}
+
+		}else{
+			log.Info("从数据库存储uk开始爬取")
+			rows, _ := db.Query("select id,flag,uk from avaiuk where flag=0  limit 1")
+			for rows.Next() {
+				rows.Scan(&id, &flag, &uk)
+			}
+			stmt, _ := db.Prepare("update avaiuk set flag=1 where id=?")
+			stmt.Exec(id)
+			log.Info("Select new uk:", uk)
+			stmt.Close()
+			GetFollow(uk, 0,true)
+
 		}
-		stmt, _ := db.Prepare("update avaiuk set flag=1 where id=?")
-		stmt.Exec(id)
-		log.Warn("Select new uk:", uk)
-		stmt.Close()
-		GetFollow(uk, 0,true)
 	}
+
+
 
 }
 
@@ -88,20 +167,16 @@ func record(rows *sql.Rows) map[string]interface{} {
 }
 
 func DoRedis() interface{} {
-	pool := GetRedisPool()
-	defer pool.Close()
-	rdsConn := pool.Get()
+	rdsConn := redisPool.Get()
 	result, error := rdsConn.Do("ping")
 	if error != nil {
 		log.Error(error.Error())
-		return nil
+		return err.Error()
 	}
 	return result
 }
 func SetKV(key interface{}, value interface{}) {
-	pool := GetRedisPool()
-	defer pool.Close()
-	conn := pool.Get()
+	conn := redisPool.Get()
 	defer conn.Close()
 	_, error := conn.Do("set", key, value)
 	if error != nil {
@@ -110,9 +185,7 @@ func SetKV(key interface{}, value interface{}) {
 }
 //redis中键是否存在
 func KeyExists(key interface{}) bool {
-	pool := GetRedisPool()
-	defer pool.Close()
-	conn := pool.Get()
+	conn := redisPool.Get()
 	defer conn.Close()
 	result, error := conn.Do("exists", key)
 	if error != nil {
