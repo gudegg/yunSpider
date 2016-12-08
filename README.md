@@ -2,16 +2,16 @@
 -----
 > 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
 
-####安装使用
+#### 安装使用
 
 1. 安装依赖
-- go get github.com/go-sql-driver/mysql
-- go get github.com/siddontang/go/log
-- go get github.com/garyburd/redigo/redis
-- go get github.com/Unknwon/goconfig
+  * go get github.com/go-sql-driver/mysql
+  * go get github.com/siddontang/go/log
+  * go get github.com/garyburd/redigo/redis
+  * go get github.com/Unknwon/goconfig
 2. 设置MySQL和Redis配置
 3. 创建database名为baidu,然后执行baidu.sql
-4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下 然后运行)
+4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下,然后运行)
 
 
 > 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
@@ -37,6 +37,6 @@ http://pan.baidu.com/pcloud/feed/getsharelist?t=1474202771918&category=0&auth_ty
  
  > [java版本](http://zhangguodong.me/2016/09/18/%E7%88%AC%E5%8F%96%E7%99%BE%E5%BA%A6%E7%BD%91%E7%9B%98%E7%94%A8%E6%88%B7%E5%88%86%E4%BA%AB/)
  
-## License
+#### License
 
 yunSpide source code is licensed under the Apache Licence, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0.html).
