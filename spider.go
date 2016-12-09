@@ -14,6 +14,10 @@ import (
 	"github.com/Unknwon/goconfig"
 	"strconv"
 	"bytes"
+	"os"
+	"bufio"
+	"io"
+	"strings"
 )
 
 var db *sql.DB
@@ -25,33 +29,27 @@ var cfg *goconfig.ConfigFile
 func init() {
 	cfg, ConfError = goconfig.LoadConfigFile("config.ini")
 	if ConfError!=nil{
-		log.Error("配置文件不存在")
-		return
+		panic("配置文件不存在")
 	}
 	username, ConfError =cfg.GetValue("MySQL","username")
 	if ConfError !=nil{
-		log.Error("读取数据库username错误")
-		return
+		panic("读取数据库username错误")
 	}
 	password, ConfError =cfg.GetValue("MySQL","password")
 	if ConfError !=nil{
-		log.Error("读取数据库password错误")
-		return
+		panic("读取数据库password错误")
 	}
 	url, ConfError =cfg.GetValue("MySQL","url")
 	if ConfError !=nil{
-		log.Error("读取数据库url错误")
-		return
+		panic("读取数据库url错误")
 	}
 	address, ConfError =cfg.GetValue("Redis","address")
 	if ConfError !=nil{
-		log.Error("读取数据库address错误")
-		return
+		panic("读取数据库address错误")
 	}
 	redis_Pwd, ConfError =cfg.GetValue("Redis","password")
 	if ConfError !=nil{
-		log.Error("读取Redis password错误")
-		return
+		panic("读取Redis password错误")
 	}
 	var dataSourceName bytes.Buffer
 	dataSourceName.WriteString(username)
@@ -61,14 +59,40 @@ func init() {
 	dataSourceName.WriteString(url)
 	db, err = sql.Open("mysql", dataSourceName.String())
 	if err!=nil{
-		log.Error("数据库连接出错")
+		log.Error(err.Error())
+	}
+	if err:=db.Ping();err!=nil{
+		panic("数据库连接出错,请检查配置账号密码是否正确")
 	}
 	db.SetMaxOpenConns(50)
 	initRedisPool()
+	initWriteHasIndexKey();
 }
+var hasIndexKeys []string
 //Redis
 var redisPool *redis.Pool
 func initRedisPool()  {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Errorf("run time panic: %v",err)
+			hasIndexKeys=make([]string,0)
+			file,err:=os.OpenFile("hasIndexKeys.txt",os.O_CREATE|os.O_RDONLY,0666)
+			defer file.Close()
+			if err==nil{
+				reader:=bufio.NewReader(file)
+				for{
+					buf,_,err:=reader.ReadLine()
+					if err!=io.EOF{
+						setKeyVal(string(buf),"")
+					}else {
+						break
+					}
+				}
+				preIndexKeySize=len(hasIndexKeys)
+			}
+
+		}
+	}()
 	redisPool = &redis.Pool{
 		MaxIdle:100,
 		IdleTimeout: time.Second * 300,
@@ -78,13 +102,13 @@ func initRedisPool()  {
 			if len(redis_Pwd)==0{
 				conn, cErr = redis.Dial("tcp", address)
 				if cErr != nil {
-					log.Errorf("Redis初始化失败，请检查配置是否填写正确")
+					log.Errorf("Redis初始化失败,请检查配置是否填写正确,key存储切换到文件模式")
 					return nil, cErr
 				}
 			}else {
 				conn, cErr = redis.Dial("tcp", address, redis.DialPassword(redis_Pwd))
 				if cErr != nil {
-					log.Errorf("Redis初始化失败，请检查配置是否填写正确")
+					log.Errorf("Redis初始化失败,请检查配置是否填写正确,key存储切换到文件模式")
 					return nil, cErr
 				}
 			}
@@ -94,6 +118,38 @@ func initRedisPool()  {
 	}
 	DoRedis()
 }
+
+const intervalTime  = time.Second*5
+var hasIndexKeySize int
+var preIndexKeySize int
+func initWriteHasIndexKey()  {
+	if hasIndexKeys!=nil{
+		go func(){
+			ch := time.NewTicker(intervalTime).C
+			for{
+				<-ch;
+				hasIndexKeySize=len(hasIndexKeys)
+				tempKeys:=hasIndexKeys[preIndexKeySize:hasIndexKeySize]
+				preIndexKeySize=hasIndexKeySize
+				if len(tempKeys)!=0{
+					file,err:=os.OpenFile("hasIndexKeys.txt",os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+					if err!=nil{
+						log.Error(err)
+					}
+					defer file.Close()
+					outputWriter := bufio.NewWriter(file)
+					for _,v:=range tempKeys{
+						outputWriter.WriteString(v+"\n")
+					}
+					outputWriter.Flush()
+				}
+
+
+			}
+		}()
+	}
+}
+
 type sharedata struct {
 	Id      int64
 	Title   string
@@ -110,14 +166,12 @@ func main() {
 	//可以先存几个热门的用户到数据库表avaiuk中 也可以直接GetFollow(2736848922, 0)爬取
 	mode,ConfError=cfg.GetValue("Mode","mode")
 	if ConfError!=nil{
-		log.Error("读取mode错误")
-		return
+		panic("读取mode错误")
 	}else {
 		if m,_:=strconv.Atoi(mode);m==1{
 			start_uk,err:=cfg.GetValue("Mode","uk")
 			if err!=nil{
-				log.Error("读取开锁爬取uk错误")
-				return
+				panic("读取开始爬取uk错误")
 			}else{
 				log.Info("从单个uk开始爬取")
 				s_uk,_:=strconv.ParseInt(start_uk,10,64)
@@ -139,9 +193,37 @@ func main() {
 
 		}
 	}
+	log.Info("已经递归爬取完成")
+	time.Sleep(time.Second*2)
 
+}
 
+func checkKeyExist(key interface{})  bool{
+	if hasIndexKeys!=nil{
+		if ok:=sliceKeyExist(hasIndexKeys,fmt.Sprintf("%v",key));ok{
+			return true
+		}else {
+			return false
+		}
+	}else {
+		return RedisKeyExists(key)
+	}
+}
+func sliceKeyExist(s []string,key string)  bool{
+	for _,v:=range s{
+		if strings.Compare(v,key)==0{
+			return true
+		}
+	}
+	return false
+}
 
+func setKeyVal(key ,val interface{})  {
+	if hasIndexKeys!=nil{
+		hasIndexKeys=append(hasIndexKeys,fmt.Sprintf("%v",key))
+	}else {
+		RedisSetKV(key,val)
+	}
 }
 
 func record(rows *sql.Rows) map[string]interface{} {
@@ -175,7 +257,7 @@ func DoRedis() interface{} {
 	}
 	return result
 }
-func SetKV(key interface{}, value interface{}) {
+func RedisSetKV(key interface{}, value interface{}) {
 	conn := redisPool.Get()
 	defer conn.Close()
 	_, error := conn.Do("set", key, value)
@@ -184,7 +266,7 @@ func SetKV(key interface{}, value interface{}) {
 	}
 }
 //redis中键是否存在
-func KeyExists(key interface{}) bool {
+func RedisKeyExists(key interface{}) bool {
 	conn := redisPool.Get()
 	defer conn.Close()
 	result, error := conn.Do("exists", key)
@@ -202,23 +284,23 @@ func KeyExists(key interface{}) bool {
 //获取订阅用户
 func GetFollow(uk int64, start int,index bool) {
 	log.Info("Into uk:",uk,",start:",start)
-	flag := KeyExists(uk)
+	flag := checkKeyExist(uk)
 	if (!flag) {
-		SetKV(uk, "")
+		setKeyVal(uk, "")
 		if(index){
 			IndexResource(uk)
 		}
-		recFollow(uk, start,true)
+		RecursionFollow(uk, start,true)
 	} else {
 		if start > 0 {
-			recFollow(uk, start,false)
+			RecursionFollow(uk, start,false)
 		} else {
 			log.Warn("Has index UK:", uk)
 		}
 	}
 }
 
-func recFollow(uk int64, start int,goPage bool) {
+func RecursionFollow(uk int64, start int,goPage bool) {
 	url := "http://yun.baidu.com/pcloud/friend/getfollowlist?query_uk=%d&limit=24&start=%d&bdstoken=e6f1efec456b92778e70c55ba5d81c3d&channel=chunlei&clienttype=0&web=1&logid=MTQ3NDA3NDg5NzU4NDAuMzQxNDQyMDY2MjA5NDA4NjU=";
 	time.Sleep(time.Second * 5)
 	real_url := fmt.Sprintf(url, uk, start)
