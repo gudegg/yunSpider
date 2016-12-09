@@ -9,10 +9,12 @@
   * go get github.com/siddontang/go/log
   * go get github.com/garyburd/redigo/redis
   * go get github.com/Unknwon/goconfig
-2. 修改config.ini配置文件中你自己的MySQL和Redis配置(可以不配Redis),Redis不配或者错误会默认将已经爬取的uk保存到hasIndexKeys.txt文件中
+2. 修改config.ini配置文件中你自己的MySQL和Redis配置(可以不配Redis),Redis不配或者错误会默认将已经爬取的uk保存到hasIndexKeys.txt文件中,这样做防止重复爬同一位用户多次
 3. 创建database名为baidu,然后执行baidu.sql
 4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下,然后运行)
-
+5. 爬取到数据只需替换链接中uk,shareid或者album_id即可访问
+    * 分享专辑链接类型：https://pan.baidu.com/wap/album/info?uk=1112219283&album_id=129732510768224935
+    * 普通文件或者文件夹类型：https://pan.baidu.com/wap/link?uk=1112219283&shareid=2109459878
 
 > 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
 
@@ -34,6 +36,8 @@ http://pan.baidu.com/pcloud/feed/getsharelist?t=1474202771918&category=0&auth_ty
 
 - 手机版分享:
  http://pan.baidu.com/wap/share/home?uk=2889076181&start=%s&adapt=pc&fr=ftw (uk:**每个百度网盘用户的唯一标示**,start:用户可能有上百上千个分享,必须分页,start默认从0开始,手机版默认分页是20个每页)
+ 
+
  
  > [java版本](http://zhangguodong.me/2016/09/18/%E7%88%AC%E5%8F%96%E7%99%BE%E5%BA%A6%E7%BD%91%E7%9B%98%E7%94%A8%E6%88%B7%E5%88%86%E4%BA%AB/)
  

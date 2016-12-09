@@ -10,7 +10,7 @@ Target Server Type    : MYSQL
 Target Server Version : 50716
 File Encoding         : 65001
 
-Date: 2016-12-08 17:06:39
+Date: 2016-12-09 14:35:22
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -35,6 +35,7 @@ CREATE TABLE `sharedata` (
   `title` varchar(255) DEFAULT NULL,
   `shareid` varchar(64) DEFAULT NULL,
   `uinfo_id` bigint(20) DEFAULT NULL,
+  `album_id` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `uinfoid` (`uinfo_id`),
   CONSTRAINT `uinfoid` FOREIGN KEY (`uinfo_id`) REFERENCES `uinfo` (`id`) ON DELETE CASCADE ON UPDATE CASCADE

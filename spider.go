@@ -389,6 +389,7 @@ type uinfo struct {
 	Uname          interface{}
 	Avatar_url     string
 	Pubshare_count int
+	Album_count	int
 }
 
 type feedata struct {
@@ -397,6 +398,8 @@ type feedata struct {
 type records struct {
 	Shareid string
 	Title   string
+	Feed_type string //专辑：album 文件或者文件夹：share
+	Album_id  string
 }
 
 var nullstart = time.Now().Unix()
@@ -419,7 +422,8 @@ func IndexResource(uk int64) {
 		} else {
 
 			share_count := yundata.Uinfo.Pubshare_count
-			if share_count > 0 {
+			album_count:=yundata.Uinfo.Album_count
+			if share_count > 0||album_count>0 {
 
 				res, err := db.Exec("INSERT into uinfo(uk,uname,avatar_url) values(?,?,?)", uk, yundata.Uinfo.Uname, yundata.Uinfo.Avatar_url)
 				checkErr(err)
@@ -430,13 +434,18 @@ func IndexResource(uk int64) {
 				log.Info("insert uinfo，uk:", uk, ",uinfoId:", uinfoId)
 
 				for _, v := range yundata.Feedata.Records {
-					//stmt, _ =db.Prepare("")
-					res, _ = db.Exec("insert into sharedata(title,shareid,uinfo_id) values(?,?,?)", v.Title, v.Shareid, id)
-					log.Info("insert sharedata")
+					if strings.Compare(v.Feed_type,"share")==0{
+						db.Exec("insert into sharedata(title,shareid,uinfo_id) values(?,?,?)", v.Title, v.Shareid, uinfoId)
+						log.Info("insert share")
+					}else if strings.Compare(v.Feed_type,"album")==0{
+						db.Exec("insert into sharedata(title,album_id,uinfo_id) values(?,?,?)", v.Title, v.Album_id, uinfoId)
+						log.Info("insert album")
+					}
+
 				}
 
 			}
-			totalpage := (share_count - 1) / 20 + 1
+			totalpage := (share_count+album_count - 1) / 20 + 1
 			var index_start = 0
 			for i := 1; i < totalpage; i++ {
 				index_start = i * 20
@@ -445,8 +454,13 @@ func IndexResource(uk int64) {
 				yundata = GetData(result)
 				if yundata != nil {
 					for _, v := range yundata.Feedata.Records {
-						db.Exec("insert into sharedata(title,shareid,uinfo_id) values(?,?,?)", v.Title, v.Shareid, uinfoId)
-						log.Info("insert sharedata")
+						if strings.Compare(v.Feed_type,"share")==0{
+							db.Exec("insert into sharedata(title,shareid,uinfo_id) values(?,?,?)", v.Title, v.Shareid, uinfoId)
+							log.Info("insert share")
+						}else if strings.Compare(v.Feed_type,"album")==0{
+							db.Exec("insert into sharedata(title,album_id,uinfo_id) values(?,?,?)", v.Title, v.Album_id, uinfoId)
+							log.Info("insert album")
+						}
 					}
 
 				} else {
