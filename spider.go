@@ -22,7 +22,7 @@ import (
 
 var db *sql.DB
 var err error
-var username,password,url,address,redis_Pwd,mode string
+var username,password,url,address,redis_Pwd,mode,logLevel string
 var ConfError error
 var cfg *goconfig.ConfigFile
 //Mysql Redis初始化
@@ -31,6 +31,12 @@ func init() {
 	if ConfError!=nil{
 		panic("配置文件不存在")
 	}
+	logLevel,ConfError=cfg.GetValue("Log","logLevel")
+	if ConfError!=nil{
+		panic("日志级别处理错误")
+	}
+	log.SetLevelByName(logLevel)
+
 	username, ConfError =cfg.GetValue("MySQL","username")
 	if ConfError !=nil{
 		panic("读取数据库username错误")
