@@ -12,10 +12,17 @@
 2. 修改config.ini配置文件中你自己的MySQL和Redis配置(可以不配Redis),Redis不配或者错误会默认将已经爬取的uk保存到hasIndexKeys.txt文件中,这样做防止重复爬同一位用户多次
 3. 创建database名为baidu,然后执行baidu.sql
 4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下,然后运行)
-5. 爬取到数据只需替换链接中uk,shareid或者album_id即可访问
+
+    
+#### 直接下载编译好的使用
+1. [下载](https://github.com/gudegg/yunSpider/releases)适合自己系统的版本
+2. 修改config.ini配置文件，并且放到程序运行的目录下
+3. linux直接./spider运行或者nohup ./spider 1>log.out 2>err.out &以后台方式运行；win直接点击spider.exe运行
+
+- 爬取到数据只需替换链接中uk,shareid或者album_id即可访问
     * 分享专辑链接类型：https://pan.baidu.com/wap/album/info?uk=1112219283&album_id=129732510768224935
     * 普通文件或者文件夹类型：https://pan.baidu.com/wap/link?uk=1112219283&shareid=2109459878
-
+    
 > 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
 
 - 获取用户订阅:
