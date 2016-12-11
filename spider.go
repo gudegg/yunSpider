@@ -407,6 +407,7 @@ type records struct {
 	Title     string
 	Feed_type string //专辑：album 文件或者文件夹：share
 	Album_id  string
+	Category  int
 }
 
 var nullstart = time.Now().Unix()
@@ -414,7 +415,7 @@ var uinfoId int64 = 0
 
 func IndexResource(uk int64) {
 	for true {
-		url := "http://pan.baidu.com/wap/share/home?uk=%d&start=%d&adapt=pc&fr=ftw"
+		url := "http://pan.baidu.com/wap/share/home?uk=%d&start=%d"
 		real_url := fmt.Sprintf(url, uk, 0)
 
 		result, _ := HttpGet(real_url, nil)
@@ -424,6 +425,7 @@ func IndexResource(uk int64) {
 			temp := nullstart
 			nullstart = time.Now().Unix()
 			if nullstart - temp < 2 {
+				log.Warn("被百度限制了 休眠50s")
 				time.Sleep(50 * time.Second)
 			}
 		} else {
@@ -442,10 +444,10 @@ func IndexResource(uk int64) {
 
 				for _, v := range yundata.Feedata.Records {
 					if strings.Compare(v.Feed_type, "share") == 0 {
-						db.Exec("insert into sharedata(title,shareid,uinfo_id) values(?,?,?)", v.Title, v.Shareid, uinfoId)
+						db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId,v.Category)
 						log.Info("insert share")
 					} else if strings.Compare(v.Feed_type, "album") == 0 {
-						db.Exec("insert into sharedata(title,album_id,uinfo_id) values(?,?,?)", v.Title, v.Album_id, uinfoId)
+						db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId,v.Category)
 						log.Info("insert album")
 					}
 
@@ -462,10 +464,10 @@ func IndexResource(uk int64) {
 				if yundata != nil {
 					for _, v := range yundata.Feedata.Records {
 						if strings.Compare(v.Feed_type, "share") == 0 {
-							db.Exec("insert into sharedata(title,shareid,uinfo_id) values(?,?,?)", v.Title, v.Shareid, uinfoId)
+							db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId,v.Category)
 							log.Info("insert share")
 						} else if strings.Compare(v.Feed_type, "album") == 0 {
-							db.Exec("insert into sharedata(title,album_id,uinfo_id) values(?,?,?)", v.Title, v.Album_id, uinfoId)
+							db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId,v.Category)
 							log.Info("insert album")
 						}
 					}
@@ -476,6 +478,7 @@ func IndexResource(uk int64) {
 					nullstart = time.Now().Unix()
 					//2次异常小于2s 被百度限制了 休眠50s
 					if nullstart - temp < 2 {
+						log.Warn("被百度限制了 休眠50s")
 						time.Sleep(50 * time.Second)
 					}
 				}

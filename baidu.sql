@@ -1,16 +1,16 @@
 /*
 Navicat MySQL Data Transfer
 
-Source Server         : localhost_3306
-Source Server Version : 50716
+Source Server         : mysql
+Source Server Version : 50517
 Source Host           : localhost:3306
 Source Database       : baidu
 
 Target Server Type    : MYSQL
-Target Server Version : 50716
+Target Server Version : 50517
 File Encoding         : 65001
 
-Date: 2016-12-09 14:35:22
+Date: 2016-12-11 16:54:00
 */
 
 SET FOREIGN_KEY_CHECKS=0;
@@ -24,7 +24,7 @@ CREATE TABLE `avaiuk` (
   `uk` bigint(20) DEFAULT NULL,
   `flag` int(1) DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Table structure for sharedata
@@ -35,11 +35,11 @@ CREATE TABLE `sharedata` (
   `title` varchar(255) DEFAULT NULL,
   `shareid` varchar(64) DEFAULT NULL,
   `uinfo_id` bigint(20) DEFAULT NULL,
-  `album_id` varchar(32) DEFAULT NULL,
+  `category` char(2) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `uinfoid` (`uinfo_id`),
   CONSTRAINT `uinfoid` FOREIGN KEY (`uinfo_id`) REFERENCES `uinfo` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Table structure for uinfo
@@ -52,4 +52,4 @@ CREATE TABLE `uinfo` (
   `avatar_url` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `uk` (`uk`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
