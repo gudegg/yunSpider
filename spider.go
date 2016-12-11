@@ -22,7 +22,8 @@ import (
 
 var db *sql.DB
 var err error
-var username, password, url, address, redis_Pwd, mode, logLevel string
+var username, password, url, address, redis_Pwd, mode, logLevel, redis_db string
+var redis_Database int
 var ConfError error
 var cfg *goconfig.ConfigFile
 //Mysql Redis初始化
@@ -56,6 +57,14 @@ func init() {
 	redis_Pwd, ConfError = cfg.GetValue("Redis", "password")
 	if ConfError != nil {
 		panic("读取Redis password错误")
+	}
+	redis_db, ConfError = cfg.GetValue("Redis", "database")
+	if ConfError != nil {
+		redis_db = "0"
+	}
+	redis_Database, ConfError = strconv.Atoi(redis_db)
+	if ConfError != nil {
+		redis_Database = 0
 	}
 	var dataSourceName bytes.Buffer
 	dataSourceName.WriteString(username)
@@ -114,7 +123,7 @@ func initRedisPool() {
 					return nil, cErr
 				}
 			} else {
-				conn, cErr = redis.Dial("tcp", address, redis.DialPassword(redis_Pwd))
+				conn, cErr = redis.Dial("tcp", address, redis.DialPassword(redis_Pwd), redis.DialDatabase(redis_Database))
 				if cErr != nil {
 					log.Errorf("Redis初始化失败,请检查配置是否填写正确,key存储切换到文件模式")
 					return nil, cErr
@@ -201,7 +210,7 @@ func main() {
 
 		}
 	}
-	log.Info("已经递归爬取完成，请切换新的热门uk或者存储到新的热门uk到数据库表avaiuk中")
+	log.Info("已经递归爬取完成，请切换新的热门uk或者存储新的热门uk到数据库表avaiuk中")
 	time.Sleep(time.Second * 2)
 
 }
@@ -444,10 +453,10 @@ func IndexResource(uk int64) {
 
 				for _, v := range yundata.Feedata.Records {
 					if strings.Compare(v.Feed_type, "share") == 0 {
-						db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId,v.Category)
+						db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
 						log.Info("insert share")
 					} else if strings.Compare(v.Feed_type, "album") == 0 {
-						db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId,v.Category)
+						db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category)
 						log.Info("insert album")
 					}
 
@@ -464,10 +473,10 @@ func IndexResource(uk int64) {
 				if yundata != nil {
 					for _, v := range yundata.Feedata.Records {
 						if strings.Compare(v.Feed_type, "share") == 0 {
-							db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId,v.Category)
+							db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
 							log.Info("insert share")
 						} else if strings.Compare(v.Feed_type, "album") == 0 {
-							db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId,v.Category)
+							db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category)
 							log.Info("insert album")
 						}
 					}
