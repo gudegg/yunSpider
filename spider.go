@@ -198,15 +198,19 @@ func main() {
 
 		} else {
 			log.Info("从数据库存储uk开始爬取")
-			rows, _ := db.Query("select id,flag,uk from avaiuk where flag=0  limit 1")
-			for rows.Next() {
-				rows.Scan(&id, &flag, &uk)
+			for{
+				rows, _ := db.Query("select id,flag,uk from avaiuk where flag=0  limit 1")
+				if rows.Next() {
+					rows.Scan(&id, &flag, &uk)
+					stmt, _ := db.Prepare("update avaiuk set flag=1 where id=?")
+					stmt.Exec(id)
+					log.Info("Select new uk:", uk)
+					stmt.Close()
+					GetFollow(uk, 0, true)
+				}else {
+					break
+				}
 			}
-			stmt, _ := db.Prepare("update avaiuk set flag=1 where id=?")
-			stmt.Exec(id)
-			log.Info("Select new uk:", uk)
-			stmt.Close()
-			GetFollow(uk, 0, true)
 
 		}
 	}
