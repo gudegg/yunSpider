@@ -29,7 +29,7 @@ var cfg *goconfig.ConfigFile
 func init() {
 	cfg, ConfError = goconfig.LoadConfigFile("config.ini")
 	if ConfError != nil {
-		panic("配置文件不存在")
+		panic("配置文件config.ini不存在,请将配置文件复制到运行目录下")
 	}
 	logLevel, ConfError = cfg.GetValue("Log", "logLevel")
 	if ConfError != nil {
