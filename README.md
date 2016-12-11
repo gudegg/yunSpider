@@ -19,7 +19,8 @@
 2. 修改config.ini配置文件，并且放到程序运行的目录下
 3. linux直接./spider运行或者nohup ./spider 1>log.out 2>err.out &以后台方式运行；win直接点击spider.exe运行
 
-- 爬取到数据只需替换链接中uk,shareid或者album_id即可访问
+#### 爬到数据使用
+- 只需替换链接中uk,shareid或者album_id即可访问
     * 分享专辑链接类型：https://pan.baidu.com/wap/album/info?uk=1112219283&album_id=129732510768224935
     * 普通文件或者文件夹类型：https://pan.baidu.com/wap/link?uk=1112219283&shareid=2109459878
     
