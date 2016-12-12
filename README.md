@@ -17,7 +17,7 @@
 #### 直接下载编译好的使用
 1. [下载](https://github.com/gudegg/yunSpider/releases)适合自己系统的版本
 2. 修改config.ini配置文件，并且放到程序运行的目录下
-3. linux直接./spider运行或者nohup ./spider 1>log.out 2>err.out &以后台方式运行；win直接点击spider.exe运行
+3. linux: chmod +x spider,然后直接./spider运行或者nohup ./spider 1>log.out 2>err.out &以后台方式运行;win:直接点击spider.exe运行
 
 #### 爬到数据使用
 - 只需替换链接中uk,shareid或者album_id即可访问
