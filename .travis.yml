@@ -1,0 +1,8 @@
+language: go
+go:
+  - 1.7.1
+install:
+  - go get github.com/go-sql-driver/mysql
+  - go get github.com/siddontang/go/log
+  - go get github.com/garyburd/redigo/redis
+  - go get github.com/Unknwon/goconfig
