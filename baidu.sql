@@ -36,6 +36,7 @@ CREATE TABLE `sharedata` (
   `shareid` varchar(64) DEFAULT NULL,
   `uinfo_id` bigint(20) DEFAULT NULL,
   `category` char(2) DEFAULT NULL,
+  `album_id` varchar(32) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `uinfoid` (`uinfo_id`),
   CONSTRAINT `uinfoid` FOREIGN KEY (`uinfo_id`) REFERENCES `uinfo` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
