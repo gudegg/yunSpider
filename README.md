@@ -1,7 +1,7 @@
 百度云爬虫
 -----
 [![Build Status](https://travis-ci.org/gudegg/yunSpider.svg?branch=user_conf)](https://travis-ci.org/gudegg/yunSpider)
-> 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
+> 网站:[http://www.fastsoso.cn/](http://www.fastsoso.cn/)
 
 #### 安装使用
 
