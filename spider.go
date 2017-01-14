@@ -80,6 +80,7 @@ func init() {
 		panic("数据库连接出错,请检查配置账号密码是否正确")
 	}
 	db.SetMaxOpenConns(50)
+	db.SetMaxIdleConns(30)
 	initRedisPool()
 	initWriteHasIndexKey();
 }
