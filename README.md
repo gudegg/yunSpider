@@ -1,7 +1,7 @@
 百度云爬虫
 -----
 [![Build Status](https://travis-ci.org/gudegg/yunSpider.svg?branch=user_conf)](https://travis-ci.org/gudegg/yunSpider)
-> 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
+> 网站:[http://www.fastsoso.cn/](http://www.fastsoso.cn/)
 
 #### 安装使用
 
@@ -12,7 +12,7 @@
   * go get github.com/Unknwon/goconfig
 2. 修改config.ini配置文件中你自己的MySQL和Redis配置(可以不配Redis),Redis不配或者错误会默认将已经爬取的uk保存到hasIndexKeys.txt文件中,这样做防止重复爬同一位用户多次
 3. 创建database名为baidu,然后执行baidu.sql
-4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编后后的文件目录下,然后运行)
+4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编译后的文件目录下,然后运行)
 
     
 #### 直接下载编译好的使用
