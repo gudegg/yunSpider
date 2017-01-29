@@ -4,7 +4,8 @@
 > 网站:[http://www.fastsoso.cn/](http://www.fastsoso.cn/)
 
 #### 安装使用
-
+1. [安装go与设置gopath](https://github.com/astaxie/build-web-application-with-golang/blob/master/zh/01.2.md)
+1. clone项目到gopath目录
 1. 安装依赖
   * go get github.com/go-sql-driver/mysql
   * go get github.com/siddontang/go/log
