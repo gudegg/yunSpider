@@ -28,7 +28,7 @@ var ConfError error
 var cfg *goconfig.ConfigFile
 var mulInsertChan = make(chan shareToDb)
 var timeFormate = "2006-01-02 15:04:05"
-var mulInsertCount=20
+var mulInsertCount = 20
 
 func sendInsertInfo(share shareToDb) {
 	mulInsertChan <- share
@@ -426,7 +426,7 @@ type follow_list struct {
 }
 
 var headers = map[string]string{
-	"User-Agent": "MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
+	"User-Agent": "Mozilla/5.0 (Linux; U; Android 4.4.4; zh-cn; HTC D820u Build/KTU84P) AppleWebKit/534.24 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.24 T5/2.0 baidubrowser/5.3.4.0 (Baidu; P1 4.4.4)",
 	"Referer":    "https://yun.baidu.com/share/home?uk=325913312#category/type=0"}
 
 func HttpGet(url string, headers map[string]string) (result string, err error) {
@@ -497,7 +497,7 @@ type records struct {
 	Filecount int
 	Feed_time CustomTime
 	Filelist  []filelist
-	Dir_cnt   int  //文件夹数
+	Dir_cnt   int //文件夹数
 }
 type filelist struct {
 	Server_filename string
@@ -518,13 +518,15 @@ type shareToDb struct {
 var nullstart = time.Now().Unix()
 var uinfoId int64 = 0
 
+var album_url = "https://pan.baidu.com/wap/album/info?uk=%d&album_id=%s"
+
 func IndexResource(uk int64) {
+	//https://pan.baidu.com/wap/share/home?&uk=1209465220&adapt=pc&fr=ftw
+	url := "https://pan.baidu.com/wap/share/home?third=0&uk=%d&start=%d&fr=ftw"
 	for true {
-		//https://pan.baidu.com/wap/share/home?&uk=1209465220&adapt=pc&fr=ftw
-		url := "https://pan.baidu.com/wap/share/home?third=0&uk=%d&start=%d&fr=ftw"
 		real_url := fmt.Sprintf(url, uk, 0)
-		time.Sleep(time.Millisecond*1000)
-		result, _ := HttpGet(real_url, nil)
+		time.Sleep(time.Millisecond * 1000)
+		result, _ := HttpGet(real_url, headers)
 
 		yundata := GetData(result)
 		if yundata == nil {
@@ -554,12 +556,11 @@ func IndexResource(uk int64) {
 						for _, v := range v.Filelist {
 							fileSize += v.Size
 						}
-						sendInsertInfo(shareToDb{v.Title, v.Shareid, v.Category, uinfoId, v.Filecount, v.Feed_time.Time, fileSize,v.Dir_cnt})
+						sendInsertInfo(shareToDb{v.Title, v.Shareid, v.Category, uinfoId, v.Filecount, v.Feed_time.Time, fileSize, v.Dir_cnt})
 						//db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
 						//log.Info("insert share")
 					} else if strings.Compare(v.Feed_type, "album") == 0 {
-						db.Exec("insert into sharedata(title,album_id,uinfo_id,category,feed_time) values(?,?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category, v.Feed_time.Time.Format(timeFormate))
-						log.Info("insert album")
+						insertAlbum(v,uk,uinfoId)
 					}
 
 				}
@@ -570,8 +571,8 @@ func IndexResource(uk int64) {
 			for i := 1; i < totalpage; i++ {
 				index_start = i * 20
 				real_url = fmt.Sprintf(url, uk, index_start)
-				time.Sleep(time.Millisecond*1000)
-				result, _ := HttpGet(real_url, nil)
+				time.Sleep(time.Millisecond * 1000)
+				result, _ := HttpGet(real_url, headers)
 				yundata = GetData(result)
 				if yundata != nil {
 					for _, v := range yundata.Feedata.Records {
@@ -582,11 +583,10 @@ func IndexResource(uk int64) {
 							for _, v := range v.Filelist {
 								fileSize += v.Size
 							}
-							sendInsertInfo(shareToDb{v.Title, v.Shareid, v.Category, uinfoId, v.Filecount, v.Feed_time.Time, fileSize,v.Dir_cnt})
+							sendInsertInfo(shareToDb{v.Title, v.Shareid, v.Category, uinfoId, v.Filecount, v.Feed_time.Time, fileSize, v.Dir_cnt})
 
 						} else if strings.Compare(v.Feed_type, "album") == 0 {
-							db.Exec("insert into sharedata(title,album_id,uinfo_id,category,feed_time) values(?,?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category, v.Feed_time.Time.Format(timeFormate))
-							log.Info("insert album")
+							insertAlbum(v,uk,uinfoId)
 						}
 					}
 
@@ -608,14 +608,63 @@ func IndexResource(uk int64) {
 	}
 }
 
-func GetData(res string) *yundata {
+func insertAlbum(v records,uk int64,uId int64)  {
+	time.Sleep(time.Second * 2)
+	album_result, err := HttpGet(fmt.Sprintf(album_url, uk, v.Album_id), headers)
+	if err != nil {
+		db.Exec("insert into sharedata(title,album_id,uinfo_id,category,feed_time) values(?,?,?,?,?)", v.Title, v.Album_id, uId, v.Category, v.Feed_time.Time.Format(timeFormate))
+	} else {
+		var album album_Share
+		json.Unmarshal([]byte(GetRegexpData(album_result)), &album)
+		var dirCount int
+		//当超过20个时大小不准确 需分页统计 目前就最多20个
+		var fileSize int64
+		if album.Albumlist.Count > 0 {
+			for _, v := range album.Albumlist.List {
+				if v.Isdir > 0 {
+					dirCount++
+				}
+				fileSize += v.Size
+			}
+		}
+
+		db.Exec("insert into sharedata(title,album_id,uinfo_id,category,feed_time,filecount,filesize,dir_cnt) values(?,?,?,?,?,?,?,?)",
+			v.Title, v.Album_id, uId, v.Category, v.Feed_time.Time.Format(timeFormate), album.Albumlist.Count, fileSize, dirCount)
+	}
+	log.Info("insert album")
+}
+
+type album_Share struct {
+	Albumlist albumlist
+}
+
+type albumlist struct {
+	Count int
+	List  []list
+}
+type list struct {
+	Size  int64
+	Isdir int
+}
+
+func GetRegexpData(res string) string {
 	r, _ := regexp.Compile("window.yunData = (.*})")
 	match := r.FindStringSubmatch(res)
 	if len(match) < 1 {
+		return ""
+	} else {
+		return match[1];
+	}
+}
+
+func GetData(res string) *yundata {
+
+	result := GetRegexpData(res)
+	if len(result) == 0 {
 		return nil
 	}
 	var yd yundata
-	error := json.Unmarshal([]byte(match[1]), &yd)
+	error := json.Unmarshal([]byte(result), &yd)
 	if error != nil {
 		log.Error("json反序列化错误", error)
 		return nil
