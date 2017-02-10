@@ -37,6 +37,10 @@ CREATE TABLE `sharedata` (
   `uinfo_id` bigint(20) DEFAULT NULL,
   `category` char(2) DEFAULT NULL,
   `album_id` varchar(32) DEFAULT NULL,
+  `feed_time` datetime DEFAULT NULL COMMENT '分享时间',
+  `filecount` int(11) DEFAULT NULL COMMENT '文件总数目',
+  `filesize` bigint(20) DEFAULT NULL COMMENT '文件总大小',
+  `dir_cnt` smallint(5) DEFAULT NULL COMMENT '文件夹数目',
   PRIMARY KEY (`id`),
   KEY `uinfoid` (`uinfo_id`),
   CONSTRAINT `uinfoid` FOREIGN KEY (`uinfo_id`) REFERENCES `uinfo` (`id`) ON DELETE CASCADE ON UPDATE CASCADE

@@ -26,6 +26,14 @@ var username, password, url, address, redis_Pwd, mode, logLevel, redis_db string
 var redis_Database int
 var ConfError error
 var cfg *goconfig.ConfigFile
+var mulInsertChan = make(chan shareToDb)
+var timeFormate = "2006-01-02 15:04:05"
+var mulInsertCount=20
+
+func sendInsertInfo(share shareToDb) {
+	mulInsertChan <- share
+}
+
 //Mysql Redis初始化
 func init() {
 	cfg, ConfError = goconfig.LoadConfigFile("config.ini")
@@ -83,18 +91,82 @@ func init() {
 	db.SetMaxIdleConns(30)
 	initRedisPool()
 	initWriteHasIndexKey();
+	initMulInsert()
 }
 
 var hasIndexKeys []string
 //Redis
 var redisPool *redis.Pool
 
+func initMulInsert() {
+	mulInsertSlice := make([]shareToDb, 0)
+	go func() {
+		for {
+			share := <-mulInsertChan
+			mulInsertSlice = append(mulInsertSlice, share)
+			if len(mulInsertSlice) >= mulInsertCount {
+				var sql bytes.Buffer
+				sql.WriteString("insert into sharedata(title,shareid,uinfo_id,category,feed_time,filesize,filecount,dir_cnt) values")
+				for i, v := range mulInsertSlice {
+					if i == len(mulInsertSlice)-1 {
+						sql.WriteString("(\"")
+						sql.WriteString(v.Title)
+						sql.WriteString("\",\"")
+						sql.WriteString(v.Shareid)
+						sql.WriteString("\",")
+						sql.WriteString(strconv.FormatInt(v.UinfoId, 10))
+						sql.WriteString(",")
+						sql.WriteString(strconv.Itoa(v.Category))
+						sql.WriteString(",\"")
+						sql.WriteString(v.Feed_time.Format(timeFormate))
+						sql.WriteString("\",")
+						sql.WriteString(strconv.FormatInt(v.FileSize, 10))
+						sql.WriteString(",")
+						sql.WriteString(strconv.Itoa(v.Filecount))
+						sql.WriteString(",")
+						sql.WriteString(strconv.Itoa(v.Dir_cnt))
+						sql.WriteString(")")
+					} else {
+						sql.WriteString("(\"")
+						sql.WriteString(v.Title)
+						sql.WriteString("\",\"")
+						sql.WriteString(v.Shareid)
+						sql.WriteString("\",")
+						sql.WriteString(strconv.FormatInt(v.UinfoId, 10))
+						sql.WriteString(",")
+						sql.WriteString(strconv.Itoa(v.Category))
+						sql.WriteString(",\"")
+						sql.WriteString(v.Feed_time.Format(timeFormate))
+						sql.WriteString("\",")
+						sql.WriteString(strconv.FormatInt(v.FileSize, 10))
+						sql.WriteString(",")
+						sql.WriteString(strconv.Itoa(v.Filecount))
+						sql.WriteString(",")
+						sql.WriteString(strconv.Itoa(v.Dir_cnt))
+						sql.WriteString(")")
+						sql.WriteString(",")
+					}
+				}
+				_, err := db.Exec(sql.String())
+				if err != nil {
+					log.Error("exec an mul insert error", err)
+					log.Error(sql.String())
+				} else {
+					log.Info("exec an mul insert success")
+				}
+				mulInsertSlice = mulInsertSlice[:0]
+			}
+
+		}
+	}()
+}
+
 func initRedisPool() {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Errorf("run time panic: %v", err)
 			hasIndexKeys = make([]string, 0)
-			file, err := os.OpenFile("hasIndexKeys.txt", os.O_CREATE | os.O_RDONLY, 0666)
+			file, err := os.OpenFile("hasIndexKeys.txt", os.O_CREATE|os.O_RDONLY, 0666)
 			defer file.Close()
 			if err == nil {
 				reader := bufio.NewReader(file)
@@ -112,7 +184,7 @@ func initRedisPool() {
 		}
 	}()
 	redisPool = &redis.Pool{
-		MaxIdle:100,
+		MaxIdle:     100,
 		IdleTimeout: time.Second * 300,
 		Dial: func() (redis.Conn, error) {
 			var conn redis.Conn
@@ -152,7 +224,7 @@ func initWriteHasIndexKey() {
 				tempKeys := hasIndexKeys[preIndexKeySize:hasIndexKeySize]
 				preIndexKeySize = hasIndexKeySize
 				if len(tempKeys) != 0 {
-					file, err := os.OpenFile("hasIndexKeys.txt", os.O_WRONLY | os.O_CREATE | os.O_APPEND, 0666)
+					file, err := os.OpenFile("hasIndexKeys.txt", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 					if err != nil {
 						log.Error(err)
 					}
@@ -199,7 +271,7 @@ func main() {
 
 		} else {
 			log.Info("从数据库存储uk开始爬取")
-			for{
+			for {
 				rows, _ := db.Query("select id,flag,uk from avaiuk where flag=0  limit 1")
 				if rows.Next() {
 					rows.Scan(&id, &flag, &uk)
@@ -208,7 +280,7 @@ func main() {
 					log.Info("Select new uk:", uk)
 					stmt.Close()
 					GetFollow(uk, 0, true)
-				}else {
+				} else {
 					break
 				}
 			}
@@ -287,6 +359,7 @@ func RedisSetKV(key interface{}, value interface{}) {
 		log.Error(error.Error())
 	}
 }
+
 //redis中键是否存在
 func RedisKeyExists(key interface{}) bool {
 	conn := redisPool.Get()
@@ -301,7 +374,6 @@ func RedisKeyExists(key interface{}) bool {
 	}
 	return false
 }
-
 
 //获取订阅用户
 func GetFollow(uk int64, start int, index bool) {
@@ -345,9 +417,9 @@ func RecursionFollow(uk int64, start int, goPage bool) {
 					}
 				}
 				if (goPage) {
-					page := (f.Total_count - 1) / 24 + 1
+					page := (f.Total_count-1)/24 + 1
 					for i := 1; i < page; i++ {
-						GetFollow(uk, 24 * i, false)
+						GetFollow(uk, 24*i, false)
 					}
 				}
 
@@ -372,8 +444,8 @@ type follow_list struct {
 }
 
 var headers = map[string]string{
-	"User-Agent":"MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
-	"Referer":"https://yun.baidu.com/share/home?uk=325913312#category/type=0"}
+	"User-Agent": "MQQBrowser/26 Mozilla/5.0 (Linux; U; Android 2.3.7; zh-cn; MB200 Build/GRJ22; CyanogenMod-7) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1",
+	"Referer":    "https://yun.baidu.com/share/home?uk=325913312#category/type=0"}
 
 func HttpGet(url string, headers map[string]string) (result string, err error) {
 
@@ -416,12 +488,49 @@ type uinfo struct {
 type feedata struct {
 	Records []records
 }
+type CustomTime struct {
+	time.Time
+}
+
+func (t *CustomTime) UnmarshalJSON(data []byte) error {
+	// Fractional seconds are handled implicitly by Parse.
+	var err error
+	timestamp, err := strconv.ParseInt(string(data), 10, 64)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	temp := time.Unix(timestamp/1000, 0)
+	t.Time = temp
+	//t.Time,err=time.Parse(`"`+time.RFC3339+`"`, temp.String())
+	return nil
+}
+
 type records struct {
 	Shareid   string
 	Title     string
 	Feed_type string //专辑：album 文件或者文件夹：share
 	Album_id  string
 	Category  int
+	Filecount int
+	Feed_time CustomTime
+	Filelist  []filelist
+	Dir_cnt   int  //文件夹数
+}
+type filelist struct {
+	Server_filename string
+	Size            int64
+}
+
+type shareToDb struct {
+	Title     string
+	Shareid   string
+	Category  int
+	UinfoId   int64
+	Filecount int
+	Feed_time time.Time
+	FileSize  int64
+	Dir_cnt   int
 }
 
 var nullstart = time.Now().Unix()
@@ -429,16 +538,17 @@ var uinfoId int64 = 0
 
 func IndexResource(uk int64) {
 	for true {
-		url := "http://pan.baidu.com/wap/share/home?uk=%d&start=%d"
+		//https://pan.baidu.com/wap/share/home?&uk=1209465220&adapt=pc&fr=ftw
+		url := "https://pan.baidu.com/wap/share/home?third=0&uk=%d&start=%d&fr=ftw"
 		real_url := fmt.Sprintf(url, uk, 0)
-
+		time.Sleep(time.Millisecond*1000)
 		result, _ := HttpGet(real_url, nil)
 
 		yundata := GetData(result)
 		if yundata == nil {
 			temp := nullstart
 			nullstart = time.Now().Unix()
-			if nullstart - temp < 2 {
+			if nullstart-temp < 2 {
 				log.Warn("被百度限制了 休眠50s")
 				time.Sleep(50 * time.Second)
 			}
@@ -458,30 +568,42 @@ func IndexResource(uk int64) {
 
 				for _, v := range yundata.Feedata.Records {
 					if strings.Compare(v.Feed_type, "share") == 0 {
-						db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
-						log.Info("insert share")
+						var fileSize int64
+						for _, v := range v.Filelist {
+							fileSize += v.Size
+						}
+						sendInsertInfo(shareToDb{v.Title, v.Shareid, v.Category, uinfoId, v.Filecount, v.Feed_time.Time, fileSize,v.Dir_cnt})
+						//db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
+						//log.Info("insert share")
 					} else if strings.Compare(v.Feed_type, "album") == 0 {
-						db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category)
+						db.Exec("insert into sharedata(title,album_id,uinfo_id,category,feed_time) values(?,?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category, v.Feed_time.Time.Format(timeFormate))
 						log.Info("insert album")
 					}
 
 				}
 
 			}
-			totalpage := (share_count + album_count - 1) / 20 + 1
+			totalpage := (share_count+album_count-1)/20 + 1
 			var index_start = 0
 			for i := 1; i < totalpage; i++ {
 				index_start = i * 20
 				real_url = fmt.Sprintf(url, uk, index_start)
+				time.Sleep(time.Millisecond*1000)
 				result, _ := HttpGet(real_url, nil)
 				yundata = GetData(result)
 				if yundata != nil {
 					for _, v := range yundata.Feedata.Records {
 						if strings.Compare(v.Feed_type, "share") == 0 {
-							db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
-							log.Info("insert share")
+							//db.Exec("insert into sharedata(title,shareid,uinfo_id,category) values(?,?,?,?)", v.Title, v.Shareid, uinfoId, v.Category)
+							//log.Info("insert share")
+							var fileSize int64
+							for _, v := range v.Filelist {
+								fileSize += v.Size
+							}
+							sendInsertInfo(shareToDb{v.Title, v.Shareid, v.Category, uinfoId, v.Filecount, v.Feed_time.Time, fileSize,v.Dir_cnt})
+
 						} else if strings.Compare(v.Feed_type, "album") == 0 {
-							db.Exec("insert into sharedata(title,album_id,uinfo_id,category) values(?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category)
+							db.Exec("insert into sharedata(title,album_id,uinfo_id,category,feed_time) values(?,?,?,?,?)", v.Title, v.Album_id, uinfoId, v.Category, v.Feed_time.Time.Format(timeFormate))
 							log.Info("insert album")
 						}
 					}
@@ -491,7 +613,7 @@ func IndexResource(uk int64) {
 					temp := nullstart
 					nullstart = time.Now().Unix()
 					//2次异常小于2s 被百度限制了 休眠50s
-					if nullstart - temp < 2 {
+					if nullstart-temp < 2 {
 						log.Warn("被百度限制了 休眠50s")
 						time.Sleep(50 * time.Second)
 					}
@@ -513,6 +635,7 @@ func GetData(res string) *yundata {
 	var yd yundata
 	error := json.Unmarshal([]byte(match[1]), &yd)
 	if error != nil {
+		log.Error("json反序列化错误", error)
 		return nil
 	}
 	return &yd
