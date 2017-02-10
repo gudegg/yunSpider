@@ -4,7 +4,8 @@
 > 网站:[http://www.fastsoso.cn/](http://www.fastsoso.cn/)
 
 #### 安装使用
-
+1. [安装go与设置gopath](https://github.com/astaxie/build-web-application-with-golang/blob/master/zh/01.2.md)
+1. clone项目到gopath目录
 1. 安装依赖
   * go get github.com/go-sql-driver/mysql
   * go get github.com/siddontang/go/log
@@ -38,7 +39,7 @@ http://pan.baidu.com/pcloud/feed/getsharelist?t=1474202771918&category=0&auth_ty
     (query_uk limit start auth_type是必须参数)
 
  
-> 上面3个连接请求必须带上 `("Referer", "https://yun.baidu.com/share/home?uk=23432432#category/type=0")`,uk多少无所谓,否则请求不到json数据,
+> 上面3个连接请求必须带上Referer`("Referer", "https://yun.baidu.com/share/home?uk=23432432#category/type=0")`,否则请求不到json数据,
 获取用户订阅和获取用户粉丝每次请求一次休眠2s的话可以无限制请求,对ip没要求,获取用户分享超坑,一个ip只能请求10次,并且休眠也没用.
 因为没有那么多ip,我就去研究手机版的用户分享,手机版获取用户分享可以一次性连续请求60次,60次后必须休眠35s左右在继续请求就可以,不会像pc版那样必须换ip,
 但是手机版只能请求网页源码,然后用正则进行匹配.
