@@ -326,6 +326,7 @@ func record(rows *sql.Rows) map[string]interface{} {
 
 func DoRedis() interface{} {
 	rdsConn := redisPool.Get()
+	defer rdsConn.Close()
 	result, error := rdsConn.Do("ping")
 	if error != nil {
 		log.Error(error.Error())
