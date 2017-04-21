@@ -261,6 +261,7 @@ func main() {
 					stmt.Exec(id)
 					log.Info("Select new uk:", uk)
 					stmt.Close()
+					rows.Close()
 					GetFollow(uk, 0, true)
 				} else {
 					break
