@@ -26,7 +26,6 @@
     * 分享专辑链接类型：https://pan.baidu.com/wap/album/info?uk=1112219283&album_id=129732510768224935
     * 普通文件或者文件夹类型：https://pan.baidu.com/wap/link?uk=1112219283&shareid=2109459878
     
-> 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
 
 - 获取用户订阅:
  http://yun.baidu.com/pcloud/friend/getfollowlist?query_uk=%s&limit=24&start=%s&bdstoken=e6f1efec456b92778e70c55ba5d81c3d&channel=chunlei&clienttype=0&web=1&logid=MTQ3NDA3NDg5NzU4NDAuMzQxNDQyMDY2MjA5NDA4NjU=  
