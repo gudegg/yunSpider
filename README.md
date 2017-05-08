@@ -5,15 +5,15 @@
 
 #### 安装使用
 1. [安装go与设置gopath](https://github.com/astaxie/build-web-application-with-golang/blob/master/zh/01.2.md)
-1. clone项目到gopath目录
-1. 安装依赖
+2. clone项目到gopath目录
+3. 安装依赖
   * go get github.com/go-sql-driver/mysql
   * go get github.com/siddontang/go/log
   * go get github.com/garyburd/redigo/redis
   * go get github.com/Unknwon/goconfig
-2. 修改config.ini配置文件中你自己的MySQL和Redis配置(可以不配Redis),Redis不配或者错误会默认将已经爬取的uk保存到hasIndexKeys.txt文件中,这样做防止重复爬同一位用户多次
-3. 创建database名为baidu,然后执行baidu.sql
-4. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编译后的文件目录下,然后运行)
+4. 修改config.ini配置文件中你自己的MySQL和Redis配置(可以不配Redis),Redis不配或者错误会默认将已经爬取的uk保存到hasIndexKeys.txt文件中,这样做防止重复爬同一位用户多次
+5. 创建database名为baidu,然后执行baidu.sql
+6. go run spider.go (当然也可以编译后运行,此时config.ini记得也复制到编译后的文件目录下,然后运行)
 
     
 #### 直接下载编译好的使用
