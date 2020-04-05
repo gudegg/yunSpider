@@ -1,6 +1,5 @@
 百度云爬虫
 -----
-> 网站:[http://www.zgdgude.cn/](http://www.zgdgude.cn/)
 
 > 最近在找实习工作,有点无聊,没事搞,研究了下爬百度网盘的用户分享
 
@@ -23,7 +22,7 @@ http://pan.baidu.com/pcloud/feed/getsharelist?t=1474202771918&category=0&auth_ty
 - 手机版分享:
  http://pan.baidu.com/wap/share/home?uk=2889076181&start=%s&adapt=pc&fr=ftw (uk:**每个百度网盘用户的唯一标示**,start:用户可能有上百上千个分享,必须分页,start默认从0开始,手机版默认分页是20个每页)
  
- > [java版本](http://zhangguodong.me/2016/09/18/%E7%88%AC%E5%8F%96%E7%99%BE%E5%BA%A6%E7%BD%91%E7%9B%98%E7%94%A8%E6%88%B7%E5%88%86%E4%BA%AB/)
+ 
  
 ## License
 
