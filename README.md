@@ -1,8 +1,5 @@
 百度云爬虫
 -----
-[![Build Status](https://travis-ci.org/gudegg/yunSpider.svg?branch=user_conf)](https://travis-ci.org/gudegg/yunSpider)
-> 网站:[http://www.fastsoso.cn/](http://www.fastsoso.cn/)
-
 #### 安装使用
 1. [安装go与设置gopath](https://github.com/astaxie/build-web-application-with-golang/blob/master/zh/01.2.md)
 2. clone项目到gopath目录
